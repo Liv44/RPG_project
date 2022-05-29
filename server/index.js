@@ -20,7 +20,7 @@ db.serialize(() => {
     "CREATE TABLE IF NOT EXISTS character(ID integer PRIMARY KEY AUTOINCREMENT NOT NULL,name text NOT NULL,userID integer NOT NULL,rank integer DEFAULT 1,skillPoints integer DEFAULT 12,health integer DEFAULT 10,attack integer DEFAULT 0,defense INTEGER DEFAULT 0,magik INTEGER DEFAULT 0,dateLastFight DATE,statusLastFight BOOLEAN DEFAULT TRUE,FOREIGN KEY(userID)REFERENCES user(ID));"
   );
   db.run(
-    "CREATE TABLE IF NOT EXISTS fight (ID integer PRIMARY KEY AUTOINCREMENT NOT NULL,fighter1ID INTEGER NOT NULL,fighter2ID INTEGER NOT NULL,winnerID BOOLEAN NOT NULL,FOREIGN KEY (fighter1ID) REFERENCES character(ID),FOREIGN KEY (fighter2ID) REFERENCES character(ID),FOREIGN KEY (winnerID) REFERENCES character(ID));"
+    "CREATE TABLE IF NOT EXISTS fight(ID integer PRIMARY KEY AUTOINCREMENT NOT NULL,winnerID BOOLEAN NOT NULL,loserID INTEGER NOT NULL,date date NOT NULL,FOREIGN KEY(winnerID)REFERENCES character(ID),FOREIGN KEY(loserID)REFERENCES character(ID));"
   );
   console.log("Database updated");
 });
@@ -89,4 +89,39 @@ app.put("/updateCharacter/:characterID", (req, res) => {
       );
     }
   });
+});
+
+app.post("/newFight", (req, res) => {
+  const { loserID, winnerID } = req.body;
+  const date = new Date();
+  db.run(
+    "INSERT INTO fight (winnerID, loserID, date) VALUES (?,?,?)",
+    [winnerID, loserID, date],
+    (err) => {
+      if (err) {
+        throw err;
+      }
+
+      //Add date and status fight to winner
+      db.all(
+        "SELECT skillPoints FROM character WHERE ID = ?",
+        winnerID,
+        (err, rows) => {
+          if (err) {
+            throw err;
+          }
+          const oldSkillPoints = rows[0].skillPoints;
+          db.run(
+            "UPDATE character SET dateLastFight = ?, statusLastFight = true, skillPoints = ? WHERE ID = ?",
+            [date, oldSkillPoints + 1, winnerID]
+          );
+        }
+      );
+      db.run(
+        "UPDATE character SET dateLastFight = ?, statusLastFight = false WHERE ID = ?",
+        [date, loserID]
+      );
+      res.send("Fight added");
+    }
+  );
 });
