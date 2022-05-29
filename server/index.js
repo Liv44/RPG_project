@@ -14,6 +14,7 @@ let db = new sqlite3.Database(dbname, (err) => {
   console.log("Database connected to " + dbname);
 });
 db.serialize(() => {
+  // Creation of the database, with tables if not existing
   db.run(
     "CREATE TABLE  IF NOT EXISTS user (ID integer PRIMARY KEY AUTOINCREMENT NOT NULL , username text NOT NULL, passwordHashed text NOT NULL);"
   );
@@ -47,6 +48,35 @@ app.get("/oneCharacter/:characterID", (req, res) => {
       throw err;
     }
     res.send(rows);
+  });
+});
+
+// Add a new character
+app.post("/newCharacter", (req, res) => {
+  const { name, userID } = req.body;
+
+  // Check numbers of character a user have
+  db.all("SELECT * FROM character WHERE userID = ?", userID, (err, rows) => {
+    if (err) {
+      throw err;
+    }
+    // if the user have already 10 characters, the new character cannot be added
+    if (rows.length === 10) {
+      res.send("Not possible to add a new character.");
+    } else {
+      // Adding the new character with its name and its user ID
+      db.run(
+        "INSERT INTO character (name, userID) VALUES(?,?)",
+        [name, userID],
+        (err, result) => {
+          if (err) {
+            throw err;
+          }
+
+          res.send(result);
+        }
+      );
+    }
   });
 });
 
