@@ -1,6 +1,7 @@
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const PORT = process.env.PORT || 3001;
+const bcrypt = require("bcryptjs");
 
 const app = express();
 app.use(express.json());
@@ -39,7 +40,7 @@ app.get("/characters/:userID", (req, res) => {
   });
 });
 
-app.get("/onecharacter/:characterID", (req, res) => {
+app.get("/oneCharacter/:characterID", (req, res) => {
   const characterID = req.params.characterID;
   db.all("SELECT * FROM character WHERE ID = ?", characterID, (err, rows) => {
     if (err) {
@@ -124,4 +125,32 @@ app.post("/newFight", (req, res) => {
       res.send("Fight added");
     }
   );
+});
+
+// User Login
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+
+  db.all("SELECT * FROM user WHERE username = ?", username, (err, rows) => {
+    if (err) {
+      throw err;
+    }
+    // Check if this user exists
+    if (rows.length === 0) {
+      res.send("User not found");
+    } else {
+      // Compare password entered and password in database
+      bcrypt.compare(password, rows[0].passwordHashed, (err, result) => {
+        if (err) {
+          throw err;
+        }
+        //Check the comparison result
+        if (result) {
+          res.send("User Connected");
+        } else {
+          res.send("Wrong password");
+        }
+      });
+    }
+  });
 });
