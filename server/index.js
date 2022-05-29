@@ -22,7 +22,7 @@ db.serialize(() => {
     "CREATE TABLE IF NOT EXISTS character(ID integer PRIMARY KEY AUTOINCREMENT NOT NULL,name text NOT NULL,userID integer NOT NULL,rank integer DEFAULT 1,skillPoints integer DEFAULT 12,health integer DEFAULT 10,attack integer DEFAULT 0,defense INTEGER DEFAULT 0,magik INTEGER DEFAULT 0,dateLastFight DATE,statusLastFight BOOLEAN DEFAULT TRUE,FOREIGN KEY(userID)REFERENCES user(ID));"
   );
   db.run(
-    "CREATE TABLE IF NOT EXISTS fight(ID integer PRIMARY KEY AUTOINCREMENT NOT NULL,winnerID BOOLEAN NOT NULL,loserID INTEGER NOT NULL,date date NOT NULL,FOREIGN KEY(winnerID)REFERENCES character(ID),FOREIGN KEY(loserID)REFERENCES character(ID));"
+    "CREATE TABLE IF NOT EXISTS fight(ID integer PRIMARY KEY AUTOINCREMENT NOT NULL,winnerID BOOLEAN NOT NULL,loserID INTEGER NOT NULL,date date NOT NULL,FOREIGN KEY(winnerID)REFERENCES character(ID) ON DELETE SET NULL,FOREIGN KEY(loserID)REFERENCES character(ID) ON DELETE SET NULL);"
   );
   console.log("Database updated");
 });
@@ -122,37 +122,84 @@ app.put("/updateCharacter/:characterID", (req, res) => {
   });
 });
 
-app.post("/newFight", (req, res) => {
-  const { loserID, winnerID } = req.body;
-  const date = new Date();
-  db.run(
-    "INSERT INTO fight (winnerID, loserID, date) VALUES (?,?,?)",
-    [winnerID, loserID, date],
-    (err) => {
-      if (err) {
-        throw err;
-      }
+//Delete a character
+app.delete("/deleteCharacter", (req, res) => {
+  const { characterID, userID } = req.body;
 
-      //Add date and status fight to winner
-      db.all(
-        "SELECT skillPoints FROM character WHERE ID = ?",
-        winnerID,
-        (err, rows) => {
+  // Verify if the character exists
+  db.all("SELECT * FROM character WHERE ID = ?", characterID, (err, rows) => {
+    if (err) {
+      throw err;
+    }
+
+    // If no character is found, send an error
+    if (rows.length === 0) {
+      res.send("You cannot delete a character which does not exist.");
+    }
+    // If the character is not from the user, send an error
+    else if (rows[0].userID !== userID) {
+      res.send("You cannot delete a character from an other user");
+    } else {
+      // Delete the character
+      db.run(
+        "DELETE FROM character WHERE ID = ?",
+        characterID,
+        (err, result) => {
           if (err) {
             throw err;
           }
-          const oldSkillPoints = rows[0].skillPoints;
-          db.run(
-            "UPDATE character SET dateLastFight = ?, statusLastFight = true, skillPoints = ? WHERE ID = ?",
-            [date, oldSkillPoints + 1, winnerID]
-          );
+
+          res.send(result);
         }
       );
-      db.run(
-        "UPDATE character SET dateLastFight = ?, statusLastFight = false WHERE ID = ?",
-        [date, loserID]
-      );
-      res.send("Fight added");
+    }
+  });
+});
+
+app.post("/newFight", (req, res) => {
+  const { loserID, winnerID } = req.body;
+  const date = new Date();
+  db.all(
+    "SELECT * FROM character WHERE ID = ? OR ID = ?",
+    [loserID, winnerID],
+    (err, rows) => {
+      if (err) {
+        throw err;
+      }
+      if (rows.length < 2) {
+        res.send("Character not found.");
+      } else {
+        db.run(
+          "INSERT INTO fight (winnerID, loserID, date) VALUES (?,?,?)",
+          [winnerID, loserID, date],
+          (err) => {
+            if (err) {
+              throw err;
+            }
+
+            //Add date and status fight to winner
+            db.all(
+              "SELECT skillPoints FROM character WHERE ID = ?",
+              winnerID,
+              (err, rows) => {
+                if (err) {
+                  throw err;
+                }
+                const oldSkillPoints = rows[0].skillPoints;
+                db.run(
+                  "UPDATE character SET dateLastFight = ?, statusLastFight = true, skillPoints = ? WHERE ID = ?",
+                  [date, oldSkillPoints + 1, winnerID]
+                );
+              }
+            );
+            db.run(
+              "UPDATE character SET dateLastFight = ?, statusLastFight = false WHERE ID = ?",
+              [date, loserID]
+            );
+            res.send("Fight added");
+          }
+        );
+      }
     }
   );
 });
