@@ -179,29 +179,47 @@ app.post("/newFight", (req, res) => {
 
             //Add date and status fight to winner
             db.all(
-              "SELECT skillPoints FROM character WHERE ID = ?",
+              "SELECT skillPoints, rank FROM character WHERE ID = ?",
               winnerID,
               (err, rows) => {
                 if (err) {
                   throw err;
                 }
                 const oldSkillPoints = rows[0].skillPoints;
+                const oldRank = rows[0].rank;
                 db.run(
-                  "UPDATE character SET dateLastFight = ?, statusLastFight = true, skillPoints = ? WHERE ID = ?",
-                  [date, oldSkillPoints + 1, winnerID]
+                  "UPDATE character SET dateLastFight = ?, statusLastFight = true, rank = ?, skillPoints = ? WHERE ID = ?",
+                  [date, oldRank + 1, oldSkillPoints + 1, winnerID]
                 );
               }
             );
-            db.run(
-              "UPDATE character SET dateLastFight = ?, statusLastFight = false WHERE ID = ?",
-              [date, loserID]
+            //Check character's rank to lower it
+            db.all(
+              "SELECT rank FROM character WHERE ID = ?",
+              loserID,
+              (err, rows) => {
+                if (err) {
+                  throw err;
+                }
+                const oldRank = rows[0].rank;
+                // condition to check if the rank is already 1.
+                db.run(
+                  "UPDATE character SET dateLastFight = ?, statusLastFight = false, rank = ? WHERE ID = ?",
+                  [date, oldRank == 1 ? oldRank : oldRank - 1, loserID]
+                );
+              }
             );
+
             res.send("Fight added");
           }
         );
       }
     }
   );
+});
+
+app.get("/fights/:characterID", (req, res) => {
+  db.all("SELECT character.name, character. FROM fights");
 });
 
 // User Login
