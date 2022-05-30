@@ -2,7 +2,7 @@ const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const PORT = process.env.PORT || 3001;
 const bcrypt = require("bcryptjs");
-
+const selectFighter = require("./selectFighter");
 const app = express();
 app.use(express.json());
 const dbname = "RPG.db";
@@ -82,8 +82,8 @@ app.post("/character/new", (req, res) => {
           }
 
           res.send({
-            error: "Max. of 10 characters reached",
-            success: result,
+            error: false,
+            success: true,
           });
         }
       );
@@ -113,7 +113,7 @@ app.put("/character/edit/:characterID", (req, res) => {
     // If it's all good, update character's stats
     if (oldSkillPoints === 0) {
       res.send({ error: "You have 0 skills points.", success: false });
-    } else if (health + attack + defense + magik <= oldSkillPoints) {
+    } else if (health + attack + defense + magik < oldSkillPoints) {
       res.send({
         error: "You don't have enough skills points.",
         success: false,
@@ -238,7 +238,7 @@ app.post("/fight/new", (req, res) => {
 
               //SQL Query to get old skills points and rank from the winner
               db.all(
-                "SELECT skillPoints, rank FROM character WHERE ID = ?",
+                "SELECT skillPoints, rank, numberFights FROM character WHERE ID = ?",
                 winnerID,
                 (err, rows) => {
                   if (err) {
@@ -246,26 +246,39 @@ app.post("/fight/new", (req, res) => {
                   }
                   const oldSkillPoints = rows[0].skillPoints;
                   const oldRank = rows[0].rank;
+                  const oldNumberFights = rows[0].numberFights;
                   //SQL Query to update skillPoints and Rank for the winner
                   db.run(
-                    "UPDATE character SET dateLastFight = ?, statusLastFight = true, rank = ?, skillPoints = ? WHERE ID = ?",
-                    [date, oldRank + 1, oldSkillPoints + 1, winnerID]
+                    "UPDATE character SET dateLastFight = ?, statusLastFight = true, rank = ?, skillPoints = ?, numberFights = ? WHERE ID = ?",
+                    [
+                      date,
+                      oldRank + 1,
+                      oldSkillPoints + 1,
+                      oldNumberFights + 1,
+                      winnerID,
+                    ]
                   );
                 }
               );
               //SQL QUERY to Check loser's rank to lower it
               db.all(
-                "SELECT rank FROM character WHERE ID = ?",
+                "SELECT rank, numberFights FROM character WHERE ID = ?",
                 loserID,
                 (err, rows) => {
                   if (err) {
                     throw err;
                   }
                   const oldRank = rows[0].rank;
+                  const oldNumberFights = rows[0].numberFights;
                   // ternary condition to check if the old rank is already 1. If it's 1, rank remains 1.
                   db.run(
-                    "UPDATE character SET dateLastFight = ?, statusLastFight = false, rank = ? WHERE ID = ?",
-                    [date, oldRank == 1 ? oldRank : oldRank - 1, loserID]
+                    "UPDATE character SET dateLastFight = ?, statusLastFight = false, rank = ?, numberFights = ? WHERE ID = ?",
+                    [
+                      date,
+                      oldRank == 1 ? oldRank : oldRank - 1,
+                      oldNumberFights + 1,
+                      loserID,
+                    ]
                   );
                 }
               );
@@ -282,6 +295,38 @@ app.post("/fight/new", (req, res) => {
       }
     );
   }
+});
+
+app.get("/fight/selectFighter", (req, res) => {
+  const { characterID, userID } = req.body;
+
+  //SQL Query to have character rank and check if the character belongs to the user.
+  db.all(
+    "SELECT rank FROM character WHERE userID = ? AND ID = ?",
+    [userID, characterID],
+    (err, rows) => {
+      if (err) {
+        throw err;
+      }
+
+      if (rows.length === 0) {
+        res.send({ err: "No character found for this user.", success: false });
+      } else {
+        const characterPlayerRank = rows[0].rank;
+        db.all(
+          //SQL Query to get all non-userID characters
+          "SELECT * FROM character WHERE userID != ?",
+          userID,
+          (err, rows) => {
+            if (err) {
+              throw err;
+            }
+            res.send(selectFighter.selectFighter(rows, characterPlayerRank));
+          }
+        );
+      }
+    }
+  );
 });
 
 // Show all fights from one character
