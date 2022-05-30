@@ -22,7 +22,7 @@ db.serialize(() => {
     "CREATE TABLE IF NOT EXISTS character(ID integer PRIMARY KEY AUTOINCREMENT NOT NULL,name text NOT NULL,userID integer NOT NULL,rank integer DEFAULT 1,skillPoints integer DEFAULT 12,health integer DEFAULT 10,attack integer DEFAULT 0,defense INTEGER DEFAULT 0,magik INTEGER DEFAULT 0,dateLastFight DATE,statusLastFight BOOLEAN DEFAULT TRUE,FOREIGN KEY(userID)REFERENCES user(ID));"
   );
   db.run(
-    "CREATE TABLE IF NOT EXISTS fight(ID integer PRIMARY KEY AUTOINCREMENT NOT NULL,winnerID BOOLEAN NOT NULL,loserID INTEGER NOT NULL,date date NOT NULL,FOREIGN KEY(winnerID)REFERENCES character(ID) ON DELETE SET NULL,FOREIGN KEY(loserID)REFERENCES character(ID) ON DELETE SET NULL);"
+    "CREATE TABLE IF NOT EXISTS fight(ID integer PRIMARY KEY AUTOINCREMENT NOT NULL,fighter1ID INTEGER,fighter2ID INTEGER,date date NOT NULL,fighter1Won BOOLEAN NOT NULL,FOREIGN KEY(fighter1ID)REFERENCES character(ID)ON DELETE SET NULL,FOREIGN KEY(fighter2ID)REFERENCES character(ID)ON DELETE SET NULL);"
   );
   console.log("Database updated");
 });
@@ -156,70 +156,97 @@ app.delete("/deleteCharacter", (req, res) => {
   });
 });
 
+// Add a new fight
 app.post("/newFight", (req, res) => {
-  const { loserID, winnerID } = req.body;
-  const date = new Date();
+  const { fighter1ID, fighter2ID, winnerID } = req.body;
+  if (
+    (winnerID != fighter1ID && winnerID != fighter2ID) ||
+    fighter1ID === fighter2ID
+  ) {
+    res.send("Erreur.");
+  } else {
+    // Create const with the ID of the loser.
+    const loserID = winnerID === fighter1ID ? fighter2ID : fighter1ID;
+    const date = new Date().toUTCString();
+    db.all(
+      "SELECT * FROM character WHERE ID = ? OR ID = ?",
+      [fighter2ID, fighter1ID],
+      (err, rows) => {
+        if (err) {
+          throw err;
+        }
+        if (rows.length < 2) {
+          res.send("Character not found.");
+        } else {
+          //Add a new fight, with a ternary condition to check if the winner is fighter1 or 2.
+          db.run(
+            "INSERT INTO fight (fighter1ID, fighter2ID, date, fighter1won) VALUES (?,?,?, ?)",
+            [
+              fighter1ID,
+              fighter2ID,
+              date,
+              winnerID == fighter1ID ? true : false,
+            ],
+            (err) => {
+              if (err) {
+                throw err;
+              }
+
+              //Add date and status fight to winner
+              db.all(
+                "SELECT skillPoints, rank FROM character WHERE ID = ?",
+                winnerID,
+                (err, rows) => {
+                  if (err) {
+                    throw err;
+                  }
+                  const oldSkillPoints = rows[0].skillPoints;
+                  const oldRank = rows[0].rank;
+                  db.run(
+                    "UPDATE character SET dateLastFight = ?, statusLastFight = true, rank = ?, skillPoints = ? WHERE ID = ?",
+                    [date, oldRank + 1, oldSkillPoints + 1, winnerID]
+                  );
+                }
+              );
+              //Check loser's rank to lower it
+              db.all(
+                "SELECT rank FROM character WHERE ID = ?",
+                loserID,
+                (err, rows) => {
+                  if (err) {
+                    throw err;
+                  }
+                  const oldRank = rows[0].rank;
+                  // ternary condition to check if the rank is already 1. If it's 1, rank remains 1.
+                  db.run(
+                    "UPDATE character SET dateLastFight = ?, statusLastFight = false, rank = ? WHERE ID = ?",
+                    [date, oldRank == 1 ? oldRank : oldRank - 1, loserID]
+                  );
+                }
+              );
+
+              res.send("Fight added");
+            }
+          );
+        }
+      }
+    );
+  }
+});
+
+// Show all fights from one character
+app.get("/fights/:characterID", (req, res) => {
+  const characterID = req.params.characterID;
   db.all(
-    "SELECT * FROM character WHERE ID = ? OR ID = ?",
-    [loserID, winnerID],
+    "SELECT f1.name AS 'Fighter 1',f2.name AS 'Fighter 2',fighter1Won AS 'Fighter 1 Won',date as 'Date' FROM fight INNER JOIN character AS f1 ON f1.ID=fight.fighter1ID INNER JOIN character AS f2 ON f2.ID=fight.fighter2ID WHERE f1.ID=? OR f2.ID=? ORDER BY date DESC",
+    [characterID, characterID],
     (err, rows) => {
       if (err) {
         throw err;
       }
-      if (rows.length < 2) {
-        res.send("Character not found.");
-      } else {
-        db.run(
-          "INSERT INTO fight (winnerID, loserID, date) VALUES (?,?,?)",
-          [winnerID, loserID, date],
-          (err) => {
-            if (err) {
-              throw err;
-            }
-
-            //Add date and status fight to winner
-            db.all(
-              "SELECT skillPoints, rank FROM character WHERE ID = ?",
-              winnerID,
-              (err, rows) => {
-                if (err) {
-                  throw err;
-                }
-                const oldSkillPoints = rows[0].skillPoints;
-                const oldRank = rows[0].rank;
-                db.run(
-                  "UPDATE character SET dateLastFight = ?, statusLastFight = true, rank = ?, skillPoints = ? WHERE ID = ?",
-                  [date, oldRank + 1, oldSkillPoints + 1, winnerID]
-                );
-              }
-            );
-            //Check character's rank to lower it
-            db.all(
-              "SELECT rank FROM character WHERE ID = ?",
-              loserID,
-              (err, rows) => {
-                if (err) {
-                  throw err;
-                }
-                const oldRank = rows[0].rank;
-                // condition to check if the rank is already 1.
-                db.run(
-                  "UPDATE character SET dateLastFight = ?, statusLastFight = false, rank = ? WHERE ID = ?",
-                  [date, oldRank == 1 ? oldRank : oldRank - 1, loserID]
-                );
-              }
-            );
-
-            res.send("Fight added");
-          }
-        );
-      }
+      res.send(rows);
     }
   );
-});
-
-app.get("/fights/:characterID", (req, res) => {
-  db.all("SELECT character.name, character. FROM fights");
 });
 
 // User Login
