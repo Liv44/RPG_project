@@ -5,7 +5,6 @@ const bcrypt = require("bcryptjs");
 
 const app = express();
 app.use(express.json());
-
 const dbname = "RPG.db";
 
 //Ouvertue de la base de données
@@ -27,22 +26,27 @@ db.serialize(() => {
   console.log("Database updated");
 });
 
+//Lauching server on port 3001
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
 });
 
+// Show all characters from one user
 app.get("/characters/:userID", (req, res) => {
   const userID = req.params.userID;
+  // SQL query to select all characters from 1 user
   db.all("SELECT * FROM character WHERE userID = ?", userID, (err, rows) => {
     if (err) {
       throw err;
     }
-    res.send(rows);
+    res.send({ error: null, success: true, result: rows });
   });
 });
 
-app.get("/oneCharacter/:characterID", (req, res) => {
+// Show details from one character
+app.get("/character/details/:characterID", (req, res) => {
   const characterID = req.params.characterID;
+  // SQL query to select details from 1 character
   db.all("SELECT * FROM character WHERE ID = ?", characterID, (err, rows) => {
     if (err) {
       throw err;
@@ -52,7 +56,7 @@ app.get("/oneCharacter/:characterID", (req, res) => {
 });
 
 // Add a new character
-app.post("/newCharacter", (req, res) => {
+app.post("/character/new", (req, res) => {
   const { name, userID } = req.body;
 
   // Check numbers of character a user have
@@ -62,7 +66,11 @@ app.post("/newCharacter", (req, res) => {
     }
     // if the user have already 10 characters, the new character cannot be added
     if (rows.length === 10) {
-      res.send("Not possible to add a new character.");
+      res.send({
+        error: "Max. of 10 characters reached",
+        success: false,
+        result: null,
+      });
     } else {
       // Adding the new character with its name and its user ID
       db.run(
@@ -73,16 +81,22 @@ app.post("/newCharacter", (req, res) => {
             throw err;
           }
 
-          res.send(result);
+          res.send({
+            error: "Max. of 10 characters reached",
+            success: result,
+          });
         }
       );
     }
   });
 });
 
-app.put("/updateCharacter/:characterID", (req, res) => {
+// Edit status of a character (attack, defense etc.)
+app.put("/character/edit/:characterID", (req, res) => {
   const characterID = req.params.characterID;
   const { name, health, attack, defense, magik } = req.body;
+
+  //SQL Query to get old stats from the character
   db.all("SELECT * FROM character WHERE ID = ?", characterID, (err, rows) => {
     if (err) {
       throw err;
@@ -93,10 +107,18 @@ app.put("/updateCharacter/:characterID", (req, res) => {
     const oldDefense = rows[0].defense;
     const oldMagik = rows[0].magik;
     const oldSkillPoints = rows[0].skillPoints;
-    if (
-      oldSkillPoints > 0 &&
-      health + attack + defense + magik <= oldSkillPoints
-    ) {
+
+    // First, verify if the character doesn't have 0 skill points
+    // Second, check if there is enough skill points to add new points to stats.
+    // If it's all good, update character's stats
+    if (oldSkillPoints === 0) {
+      res.send({ error: "You have 0 skills points.", success: false });
+    } else if (health + attack + defense + magik <= oldSkillPoints) {
+      res.send({
+        error: "You don't have enough skills points.",
+        success: false,
+      });
+    } else {
       const newHealth = oldHealth + health;
       const newAttack = oldAttack + attack;
       const newDefense = oldDefense + defense;
@@ -115,7 +137,10 @@ app.put("/updateCharacter/:characterID", (req, res) => {
           if (err) {
             throw err;
           }
-          res.send("Character updated");
+          res.send({
+            error: null,
+            sucess: true,
+          });
         }
       );
     }
@@ -123,24 +148,29 @@ app.put("/updateCharacter/:characterID", (req, res) => {
 });
 
 //Delete a character
-app.delete("/deleteCharacter", (req, res) => {
+app.delete("/character/delete", (req, res) => {
   const { characterID, userID } = req.body;
 
-  // Verify if the character exists
+  // SQL Query to verify if the character exists
   db.all("SELECT * FROM character WHERE ID = ?", characterID, (err, rows) => {
     if (err) {
       throw err;
     }
-
     // If no character is found, send an error
     if (rows.length === 0) {
-      res.send("You cannot delete a character which does not exist.");
+      res.send({
+        error: "You cannot delete a character which does not exist.",
+        success: false,
+      });
     }
     // If the character is not from the user, send an error
     else if (rows[0].userID !== userID) {
-      res.send("You cannot delete a character from an other user");
+      res.send({
+        error: "You cannot delete a character from an other user",
+        success: false,
+      });
     } else {
-      // Delete the character
+      // SQL Query to delete the character
       db.run(
         "DELETE FROM character WHERE ID = ?",
         characterID,
@@ -149,7 +179,10 @@ app.delete("/deleteCharacter", (req, res) => {
             throw err;
           }
 
-          res.send(result);
+          res.send({
+            error: null,
+            success: result,
+          });
         }
       );
     }
@@ -157,17 +190,25 @@ app.delete("/deleteCharacter", (req, res) => {
 });
 
 // Add a new fight
-app.post("/newFight", (req, res) => {
+app.post("/fight/new", (req, res) => {
   const { fighter1ID, fighter2ID, winnerID } = req.body;
-  if (
-    (winnerID != fighter1ID && winnerID != fighter2ID) ||
-    fighter1ID === fighter2ID
-  ) {
-    res.send("Erreur.");
+  // Check some errors (same fighter, or different winner).
+  if (fighter1ID === fighter2ID) {
+    res.send({
+      error: "Les 2 personnages ne peuvent être les mêmes.",
+      success: false,
+    });
+  } else if (winnerID != fighter1ID && winnerID != fighter2ID) {
+    res.send({
+      error: "Le gagnant doit être un des personnages joués.",
+      success: false,
+    });
   } else {
     // Create const with the ID of the loser.
     const loserID = winnerID === fighter1ID ? fighter2ID : fighter1ID;
     const date = new Date().toUTCString();
+
+    //SQL Query to check if the 2 fighters exists in the database
     db.all(
       "SELECT * FROM character WHERE ID = ? OR ID = ?",
       [fighter2ID, fighter1ID],
@@ -176,9 +217,12 @@ app.post("/newFight", (req, res) => {
           throw err;
         }
         if (rows.length < 2) {
-          res.send("Character not found.");
+          res.send({
+            error: "Le (ou les) personnage(s) n'existe(nt) pas.",
+            success: false,
+          });
         } else {
-          //Add a new fight, with a ternary condition to check if the winner is fighter1 or 2.
+          //SQL Query to add a new fight, with a ternary condition to check if the winner is fighter1 or 2.
           db.run(
             "INSERT INTO fight (fighter1ID, fighter2ID, date, fighter1won) VALUES (?,?,?, ?)",
             [
@@ -192,7 +236,7 @@ app.post("/newFight", (req, res) => {
                 throw err;
               }
 
-              //Add date and status fight to winner
+              //SQL Query to get old skills points and rank from the winner
               db.all(
                 "SELECT skillPoints, rank FROM character WHERE ID = ?",
                 winnerID,
@@ -202,13 +246,14 @@ app.post("/newFight", (req, res) => {
                   }
                   const oldSkillPoints = rows[0].skillPoints;
                   const oldRank = rows[0].rank;
+                  //SQL Query to update skillPoints and Rank for the winner
                   db.run(
                     "UPDATE character SET dateLastFight = ?, statusLastFight = true, rank = ?, skillPoints = ? WHERE ID = ?",
                     [date, oldRank + 1, oldSkillPoints + 1, winnerID]
                   );
                 }
               );
-              //Check loser's rank to lower it
+              //SQL QUERY to Check loser's rank to lower it
               db.all(
                 "SELECT rank FROM character WHERE ID = ?",
                 loserID,
@@ -217,7 +262,7 @@ app.post("/newFight", (req, res) => {
                     throw err;
                   }
                   const oldRank = rows[0].rank;
-                  // ternary condition to check if the rank is already 1. If it's 1, rank remains 1.
+                  // ternary condition to check if the old rank is already 1. If it's 1, rank remains 1.
                   db.run(
                     "UPDATE character SET dateLastFight = ?, statusLastFight = false, rank = ? WHERE ID = ?",
                     [date, oldRank == 1 ? oldRank : oldRank - 1, loserID]
@@ -225,7 +270,12 @@ app.post("/newFight", (req, res) => {
                 }
               );
 
-              res.send("Fight added");
+              // When all Queries are done (add fight, update skills and rank to winner and loser) :
+              // Send success response
+              res.send({
+                error: null,
+                success: true,
+              });
             }
           );
         }
@@ -235,16 +285,18 @@ app.post("/newFight", (req, res) => {
 });
 
 // Show all fights from one character
-app.get("/fights/:characterID", (req, res) => {
+app.get("/character/fights/:characterID", (req, res) => {
   const characterID = req.params.characterID;
+
+  // SQL Query with INNER JOIN to get names of fighter 1, fighter 2, and the winner.
   db.all(
-    "SELECT f1.name AS 'Fighter 1',f2.name AS 'Fighter 2',fighter1Won AS 'Fighter 1 Won',date as 'Date' FROM fight INNER JOIN character AS f1 ON f1.ID=fight.fighter1ID INNER JOIN character AS f2 ON f2.ID=fight.fighter2ID WHERE f1.ID=? OR f2.ID=? ORDER BY date DESC",
+    "SELECT f1.name AS 'Fighter 1',f2.name AS 'Fighter 2', fighter1Won AS 'Fighter 1 Won',date as 'Date' FROM fight INNER JOIN character AS f1 ON f1.ID=fight.fighter1ID INNER JOIN character AS f2 ON f2.ID=fight.fighter2ID WHERE f1.ID=? OR f2.ID=? ORDER BY date DESC",
     [characterID, characterID],
     (err, rows) => {
       if (err) {
         throw err;
       }
-      res.send(rows);
+      res.send({ err: null, success: true, result: rows });
     }
   );
 });
@@ -253,13 +305,17 @@ app.get("/fights/:characterID", (req, res) => {
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
+  // SQL Query to check username
   db.all("SELECT * FROM user WHERE username = ?", username, (err, rows) => {
     if (err) {
       throw err;
     }
     // Check if this user exists
     if (rows.length === 0) {
-      res.send("User not found");
+      res.send({
+        err: "L'utilisateur n'a pas été trouvé.",
+        success: false,
+      });
     } else {
       // Compare password entered and password in database
       bcrypt.compare(password, rows[0].passwordHashed, (err, result) => {
@@ -268,9 +324,12 @@ app.post("/login", (req, res) => {
         }
         //Check the comparison result
         if (result) {
-          res.send("User Connected");
+          res.send({ err: null, success: true });
         } else {
-          res.send("Wrong password");
+          res.send({
+            err: "Mot de passe incorrect",
+            success: false,
+          });
         }
       });
     }
