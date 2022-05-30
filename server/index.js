@@ -189,6 +189,23 @@ app.delete("/character/delete", (req, res) => {
   });
 });
 
+// Show all fights from one character
+app.get("/character/fights/:characterID", (req, res) => {
+  const characterID = req.params.characterID;
+
+  // SQL Query with INNER JOIN to get names of fighter 1, fighter 2, and the winner.
+  db.all(
+    "SELECT f1.name AS 'Fighter 1',f2.name AS 'Fighter 2', fighter1Won AS 'Fighter 1 Won',date as 'Date' FROM fight INNER JOIN character AS f1 ON f1.ID=fight.fighter1ID INNER JOIN character AS f2 ON f2.ID=fight.fighter2ID WHERE f1.ID=? OR f2.ID=? ORDER BY date DESC",
+    [characterID, characterID],
+    (err, rows) => {
+      if (err) {
+        throw err;
+      }
+      res.send({ err: null, success: true, result: rows });
+    }
+  );
+});
+
 // Add a new fight
 app.post("/fight/new", (req, res) => {
   const { fighter1ID, fighter2ID, winnerID } = req.body;
@@ -297,6 +314,7 @@ app.post("/fight/new", (req, res) => {
   }
 });
 
+//Select a fighter
 app.get("/fight/selectFighter", (req, res) => {
   const { characterID, userID } = req.body;
 
@@ -309,9 +327,11 @@ app.get("/fight/selectFighter", (req, res) => {
         throw err;
       }
 
+      // Check if there is a character for this ID and this user
       if (rows.length === 0) {
         res.send({ err: "No character found for this user.", success: false });
       } else {
+        //Get character's player rank
         const characterPlayerRank = rows[0].rank;
         db.all(
           //SQL Query to get all non-userID characters
@@ -321,27 +341,11 @@ app.get("/fight/selectFighter", (req, res) => {
             if (err) {
               throw err;
             }
+            // Module function to select a fighter with different conditions
             res.send(selectFighter.selectFighter(rows, characterPlayerRank));
           }
         );
       }
-    }
-  );
-});
-
-// Show all fights from one character
-app.get("/character/fights/:characterID", (req, res) => {
-  const characterID = req.params.characterID;
-
-  // SQL Query with INNER JOIN to get names of fighter 1, fighter 2, and the winner.
-  db.all(
-    "SELECT f1.name AS 'Fighter 1',f2.name AS 'Fighter 2', fighter1Won AS 'Fighter 1 Won',date as 'Date' FROM fight INNER JOIN character AS f1 ON f1.ID=fight.fighter1ID INNER JOIN character AS f2 ON f2.ID=fight.fighter2ID WHERE f1.ID=? OR f2.ID=? ORDER BY date DESC",
-    [characterID, characterID],
-    (err, rows) => {
-      if (err) {
-        throw err;
-      }
-      res.send({ err: null, success: true, result: rows });
     }
   );
 });
