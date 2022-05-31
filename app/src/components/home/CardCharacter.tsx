@@ -2,16 +2,15 @@ import {
   Box,
   Button,
   Divider,
-  Heading,
   Popover,
   PopoverTrigger,
   Text,
   VStack,
-  HStack,
 } from "@chakra-ui/react";
 import React, { FC, useState } from "react";
 import { CharacterType } from "../../types/utils";
 import { CardChangeStatsCharacter } from "./CardChangeStatsCharacter";
+import { HeadingCard } from "./HeadingCard";
 import { PopupFights } from "./PopupFights";
 
 interface CardCharacterProps {
@@ -35,12 +34,12 @@ export const CardCharacter: FC<CardCharacterProps> = ({
         borderColor="yellow"
         p={4}
       >
-        <HStack>
-          <Heading textAlign="center" size="md">
-            {character.name}
-          </Heading>
-          <Text fontWeight="light">(Rank {character.rank})</Text>
-        </HStack>
+        <HeadingCard
+          rank={character.rank}
+          name={character.name}
+          ID={character.ID}
+          changesOnCharacter={changesOnCharacter}
+        ></HeadingCard>
         <Divider mb={5}></Divider>
         <Text textAlign="center" fontWeight="light">
           Points de compétences restants

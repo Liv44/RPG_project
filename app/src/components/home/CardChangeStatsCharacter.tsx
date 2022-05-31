@@ -2,6 +2,7 @@ import { Box, Button, Divider, Heading, Text, HStack } from "@chakra-ui/react";
 import axios from "axios";
 import React, { FC, useState } from "react";
 import { CharacterType } from "../../types/utils";
+import { HeadingCard } from "./HeadingCard";
 import { Stats } from "./Stats";
 
 interface CardCharacterProps {
@@ -45,12 +46,12 @@ export const CardChangeStatsCharacter: FC<CardCharacterProps> = ({
       borderColor="pink"
       p={4}
     >
-      <HStack>
-        <Heading textAlign="center" size="md">
-          {character.name}
-        </Heading>
-        <Text fontWeight="light">(Rank {character.rank})</Text>
-      </HStack>
+      <HeadingCard
+        name={character.name}
+        rank={character.rank}
+        ID={character.ID}
+        changesOnCharacter={clicked}
+      ></HeadingCard>
       <Divider mb={5}></Divider>
       <Text textAlign="center" fontWeight="light">
         Points de compétences restants
