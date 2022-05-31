@@ -1,8 +1,8 @@
 import { Box, Button, Divider, Heading, Text } from "@chakra-ui/react";
 import axios from "axios";
 import React, { FC, useState } from "react";
-import { CharacterType } from "../types/utils";
-import { Stats } from "./CharacterCard/Stats";
+import { CharacterType } from "../../types/utils";
+import { Stats } from "./Stats";
 
 interface CardCharacterProps {
   character: CharacterType;

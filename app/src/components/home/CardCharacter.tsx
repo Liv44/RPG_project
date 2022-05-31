@@ -1,7 +1,7 @@
 import { Box, Button, Divider, Heading, Text, VStack } from "@chakra-ui/react";
 import React, { FC, useState } from "react";
-import { CharacterType } from "../types/utils";
-import { CardChangeStatsCharacter } from "../components/CardChangeStatsCharacter";
+import { CharacterType } from "../../types/utils";
+import { CardChangeStatsCharacter } from "./CardChangeStatsCharacter";
 
 interface CardCharacterProps {
   character: CharacterType;
