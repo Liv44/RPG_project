@@ -1,4 +1,4 @@
-import { Box, Button, Divider, Heading, Text } from "@chakra-ui/react";
+import { Box, Button, Divider, Heading, Text, HStack } from "@chakra-ui/react";
 import axios from "axios";
 import React, { FC, useState } from "react";
 import { CharacterType } from "../../types/utils";
@@ -45,14 +45,20 @@ export const CardChangeStatsCharacter: FC<CardCharacterProps> = ({
       borderColor="pink"
       p={4}
     >
-      <Heading textAlign="center" size="md">
-        {character.name}
-      </Heading>
-      <Divider backgroundColor="blue"></Divider>
-      <Text>Rank {character.rank}</Text>
-      <Text>Points de compétences restants {remainingSkillPoints}</Text>
+      <HStack>
+        <Heading textAlign="center" size="md">
+          {character.name}
+        </Heading>
+        <Text fontWeight="light">(Rank {character.rank})</Text>
+      </HStack>
+      <Divider mb={5}></Divider>
+      <Text textAlign="center" fontWeight="light">
+        Points de compétences restants
+      </Text>
+      <Text textAlign="center" fontWeight="extrabold">
+        {remainingSkillPoints}
+      </Text>
       <Box mb={5}>
-        <Text>PV : {character.health}</Text>
         {/* changement des différents stats du character */}
         <Stats
           stat="PV"
