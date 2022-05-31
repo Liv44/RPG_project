@@ -7,6 +7,7 @@ import {
   PopoverTrigger,
   Text,
   VStack,
+  HStack,
 } from "@chakra-ui/react";
 import React, { FC, useState } from "react";
 import { CharacterType } from "../../types/utils";
@@ -27,17 +28,26 @@ export const CardCharacter: FC<CardCharacterProps> = ({
     return (
       <Box
         flexDirection="row"
+        bg="white"
+        boxShadow="sm"
         border="4px"
         borderRadius={30}
         borderColor="yellow"
         p={4}
       >
-        <Heading textAlign="center" size="md">
-          {character.name}
-        </Heading>
-        <Divider backgroundColor="blue"></Divider>
-        <Text>Rank {character.rank}</Text>
-        <Text>Points de compétences {character.skillPoints}</Text>
+        <HStack>
+          <Heading textAlign="center" size="md">
+            {character.name}
+          </Heading>
+          <Text fontWeight="light">(Rank {character.rank})</Text>
+        </HStack>
+        <Divider mb={5}></Divider>
+        <Text textAlign="center" fontWeight="light">
+          Points de compétences restants
+        </Text>
+        <Text textAlign="center" fontWeight="extrabold">
+          {character.skillPoints}
+        </Text>
         <Box mb={5}>
           <Text>PV : {character.health}</Text>
           <Text>Attaque : {character.attack}</Text>
