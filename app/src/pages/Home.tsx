@@ -1,7 +1,7 @@
 import { Grid, Box } from "@chakra-ui/react";
 import axios from "axios";
 import React, { FC, useEffect, useState } from "react";
-import { CardCharacter } from "../components/CardCharacter";
+import { CardCharacter } from "../components/home/CardCharacter";
 // interface HomeProps {}
 export const Home: FC = () => {
   const [allCharacters, setAllCharacters] = useState([]);
