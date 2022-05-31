@@ -12,7 +12,6 @@ export const Home: FC = () => {
       if (res.data.success) {
         setAllCharacters(res.data.result);
       }
-      console.log(res.data);
     });
   }, [changes]);
 
