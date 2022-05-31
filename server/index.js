@@ -210,7 +210,7 @@ app.get("/character/fights/:characterID", (req, res) => {
 
   // SQL Query with INNER JOIN to get names of fighter 1, fighter 2, and the winner.
   db.all(
-    "SELECT f1.name AS 'Fighter 1',f2.name AS 'Fighter 2', fighter1Won AS 'Fighter 1 Won',date as 'Date' FROM fight INNER JOIN character AS f1 ON f1.ID=fight.fighter1ID INNER JOIN character AS f2 ON f2.ID=fight.fighter2ID WHERE f1.ID=? OR f2.ID=? ORDER BY date DESC",
+    "SELECT f1.name AS 'fighter1',f2.name AS 'fighter2', fighter1Won AS 'fighter1Won',date as 'Date' FROM fight INNER JOIN character AS f1 ON f1.ID=fight.fighter1ID INNER JOIN character AS f2 ON f2.ID=fight.fighter2ID WHERE f1.ID=? OR f2.ID=? ORDER BY date DESC",
     [characterID, characterID],
     (err, rows) => {
       if (err) {

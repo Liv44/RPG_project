@@ -34,8 +34,6 @@ export const CardChangeStatsCharacter: FC<CardCharacterProps> = ({
     axios
       .put("/character/edit/" + character.ID, newStatCharacter)
       .then((res) => {
-        console.log(res.data);
-        console.log(newStatCharacter);
         clicked();
       });
   };

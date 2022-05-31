@@ -1,7 +1,17 @@
-import { Box, Button, Divider, Heading, Text, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Divider,
+  Heading,
+  Popover,
+  PopoverTrigger,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
 import React, { FC, useState } from "react";
 import { CharacterType } from "../../types/utils";
 import { CardChangeStatsCharacter } from "./CardChangeStatsCharacter";
+import { PopupFights } from "./PopupFights";
 
 interface CardCharacterProps {
   character: CharacterType;
@@ -44,9 +54,14 @@ export const CardCharacter: FC<CardCharacterProps> = ({
           >
             Distribuer les compétences
           </Button>
-          <Button size="sm" backgroundColor="pink">
-            Voir les derniers combats
-          </Button>
+          <Popover>
+            <PopoverTrigger>
+              <Button size="sm" backgroundColor="pink">
+                Voir les derniers combats
+              </Button>
+            </PopoverTrigger>
+            <PopupFights character={character} />
+          </Popover>
           <Button backgroundColor="blue" color="white">
             Lancer un combat
           </Button>

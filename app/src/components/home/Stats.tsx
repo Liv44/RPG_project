@@ -20,7 +20,7 @@ export const Stats: FC<StatsProps> = ({
   const addSkillPoint = () => {
     setValueSkillPointAdded(valueSkillPointAdded + 1);
     changeSkillPoints(1);
-    sendPointsAdded(valueSkillPointAdded);
+    sendPointsAdded(valueSkillPointAdded + 1);
   };
   const lowerSkillPoint = () => {
     setValueSkillPointAdded(valueSkillPointAdded - 1);
