@@ -128,7 +128,7 @@ app.put("/character/edit/:characterID", (req, res) => {
     // If it's all good, update character's stats
     if (oldSkillPoints === 0) {
       res.send({ error: "You have 0 skills points.", success: false });
-    } else if (health + attack + defense + magik < oldSkillPoints) {
+    } else if (health + attack + defense + magik > oldSkillPoints) {
       res.send({
         error: "You don't have enough skills points.",
         success: false,
