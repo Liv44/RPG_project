@@ -1,6 +1,7 @@
 import { Box, Button, Heading, HStack, Text } from "@chakra-ui/react";
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Fight } from "./pages/Fight";
 
 import { Home } from "./pages/Home";
 
@@ -22,6 +23,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Home />}></Route>
+          <Route path="/fight" element={<Fight />}></Route>
         </Routes>
       </Router>
     </Box>
