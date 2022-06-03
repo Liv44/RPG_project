@@ -1,10 +1,10 @@
 const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
-const PORT = process.env.PORT || 3001;
 const bcrypt = require("bcryptjs");
 const selectFighter = require("./selectFighter");
-const app = express();
-app.use(express.json());
+const fightTurns = require("./fightTurns");
+const session = require("express-session");
+
 const dbname = "RPG.db";
 
 //Ouvertue de la base de données
@@ -26,7 +26,22 @@ db.serialize(() => {
   console.log("Database updated");
 });
 
+const app = express();
+app.use(express.json());
+app.use(
+  session({
+    key: "userID",
+    secret: "secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    },
+  })
+);
+
 //Lauching server on port 3001
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
 });
@@ -113,7 +128,7 @@ app.put("/character/edit/:characterID", (req, res) => {
     // If it's all good, update character's stats
     if (oldSkillPoints === 0) {
       res.send({ error: "You have 0 skills points.", success: false });
-    } else if (health + attack + defense + magik < oldSkillPoints) {
+    } else if (health + attack + defense + magik > oldSkillPoints) {
       res.send({
         error: "You don't have enough skills points.",
         success: false,
@@ -195,7 +210,7 @@ app.get("/character/fights/:characterID", (req, res) => {
 
   // SQL Query with INNER JOIN to get names of fighter 1, fighter 2, and the winner.
   db.all(
-    "SELECT f1.name AS 'Fighter 1',f2.name AS 'Fighter 2', fighter1Won AS 'Fighter 1 Won',date as 'Date' FROM fight INNER JOIN character AS f1 ON f1.ID=fight.fighter1ID INNER JOIN character AS f2 ON f2.ID=fight.fighter2ID WHERE f1.ID=? OR f2.ID=? ORDER BY date DESC",
+    "SELECT f1.name AS 'fighter1',f2.name AS 'fighter2', fighter1Won AS 'fighter1Won',date as 'Date' FROM fight INNER JOIN character AS f1 ON f1.ID=fight.fighter1ID INNER JOIN character AS f2 ON f2.ID=fight.fighter2ID WHERE f1.ID=? OR f2.ID=? ORDER BY date DESC",
     [characterID, characterID],
     (err, rows) => {
       if (err) {
@@ -302,6 +317,7 @@ app.post("/fight/new", (req, res) => {
 
               // When all Queries are done (add fight, update skills and rank to winner and loser) :
               // Send success response
+              req.session.fighters = undefined;
               res.send({
                 error: null,
                 success: true,
@@ -314,13 +330,17 @@ app.post("/fight/new", (req, res) => {
   }
 });
 
+app.get("/fight/loadingFighters", (req, res) => {
+  res.send(req.session.fighters);
+});
+
 //Select a fighter
-app.get("/fight/selectFighter", (req, res) => {
-  const { characterID, userID } = req.body;
+app.get("/fight/selectFighter/:characterID/:userID", (req, res) => {
+  const { characterID, userID } = req.params;
 
   //SQL Query to have character rank and check if the character belongs to the user.
   db.all(
-    "SELECT rank FROM character WHERE userID = ? AND ID = ?",
+    "SELECT * FROM character WHERE userID = ? AND ID = ?",
     [userID, characterID],
     (err, rows) => {
       if (err) {
@@ -331,8 +351,10 @@ app.get("/fight/selectFighter", (req, res) => {
       if (rows.length === 0) {
         res.send({ err: "No character found for this user.", success: false });
       } else {
+        const characterFound = rows[0];
+
         //Get character's player rank
-        const characterPlayerRank = rows[0].rank;
+        const characterPlayerRank = characterFound.rank;
         db.all(
           //SQL Query to get all non-userID characters
           "SELECT * FROM character WHERE userID != ?",
@@ -342,12 +364,28 @@ app.get("/fight/selectFighter", (req, res) => {
               throw err;
             }
             // Module function to select a fighter with different conditions
-            res.send(selectFighter.selectFighter(rows, characterPlayerRank));
+            fighter2 = selectFighter.selectFighter(rows, characterPlayerRank);
+
+            //Add fighters to session
+            req.session.fighters = {
+              fighter1: characterFound,
+              fighter2: fighter2.result,
+            };
+            res.send({
+              error: null,
+              success: true,
+            });
           }
         );
       }
     }
   );
+});
+
+app.post("/fighting", (req, res) => {
+  const { Attacking, Passive, healthPassive } = req.body;
+  const result = fightTurns.fightTurns(Attacking, Passive, healthPassive);
+  res.send({ error: null, success: true, result: result });
 });
 
 // User Login
@@ -373,6 +411,7 @@ app.post("/login", (req, res) => {
         }
         //Check the comparison result
         if (result) {
+          req.session.userID = rows[0].ID;
           res.send({ err: null, success: true });
         } else {
           res.send({
