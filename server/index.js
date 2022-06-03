@@ -317,6 +317,7 @@ app.post("/fight/new", (req, res) => {
 
               // When all Queries are done (add fight, update skills and rank to winner and loser) :
               // Send success response
+              req.session.fighters = undefined;
               res.send({
                 error: null,
                 success: true,
@@ -327,6 +328,10 @@ app.post("/fight/new", (req, res) => {
       }
     );
   }
+});
+
+app.get("/fight/loadingFighters", (req, res) => {
+  res.send(req.session.fighters);
 });
 
 //Select a fighter
@@ -360,10 +365,15 @@ app.get("/fight/selectFighter", (req, res) => {
             }
             // Module function to select a fighter with different conditions
             fighter2 = selectFighter.selectFighter(rows, characterPlayerRank);
-            res.send({ error: null, success: true });
+            res.send({
+              error: null,
+              success: true,
+            });
             req.session.userID = characterFound.userID;
-            req.session.fighter2 = fighter2;
-            req.session.fighter1 = characterID;
+            req.session.fighters = {
+              fighter1: characterFound,
+              fighter2: fighter2,
+            };
           }
         );
       }
