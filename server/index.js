@@ -3,9 +3,24 @@ const sqlite3 = require("sqlite3").verbose();
 const PORT = process.env.PORT || 3001;
 const bcrypt = require("bcryptjs");
 const selectFighter = require("./selectFighter");
+const fightTurns = require("./fightTurns");
 const app = express();
 app.use(express.json());
 const dbname = "RPG.db";
+
+const session = require("express-session");
+
+app.use(
+  session({
+    key: "userID",
+    secret: "secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    },
+  })
+);
 
 //Ouvertue de la base de données
 let db = new sqlite3.Database(dbname, (err) => {
@@ -302,6 +317,7 @@ app.post("/fight/new", (req, res) => {
 
               // When all Queries are done (add fight, update skills and rank to winner and loser) :
               // Send success response
+              req.session.fighters = undefined;
               res.send({
                 error: null,
                 success: true,
@@ -314,13 +330,17 @@ app.post("/fight/new", (req, res) => {
   }
 });
 
+app.get("/fight/loadingFighters", (req, res) => {
+  res.send(req.session.fighters);
+});
+
 //Select a fighter
 app.get("/fight/selectFighter", (req, res) => {
   const { characterID, userID } = req.body;
 
   //SQL Query to have character rank and check if the character belongs to the user.
   db.all(
-    "SELECT rank FROM character WHERE userID = ? AND ID = ?",
+    "SELECT * FROM character WHERE userID = ? AND ID = ?",
     [userID, characterID],
     (err, rows) => {
       if (err) {
@@ -331,8 +351,10 @@ app.get("/fight/selectFighter", (req, res) => {
       if (rows.length === 0) {
         res.send({ err: "No character found for this user.", success: false });
       } else {
+        const characterFound = rows[0];
+
         //Get character's player rank
-        const characterPlayerRank = rows[0].rank;
+        const characterPlayerRank = characterFound.rank;
         db.all(
           //SQL Query to get all non-userID characters
           "SELECT * FROM character WHERE userID != ?",
@@ -342,12 +364,27 @@ app.get("/fight/selectFighter", (req, res) => {
               throw err;
             }
             // Module function to select a fighter with different conditions
-            res.send(selectFighter.selectFighter(rows, characterPlayerRank));
+            fighter2 = selectFighter.selectFighter(rows, characterPlayerRank);
+            res.send({
+              error: null,
+              success: true,
+            });
+            req.session.userID = characterFound.userID;
+            req.session.fighters = {
+              fighter1: characterFound,
+              fighter2: fighter2,
+            };
           }
         );
       }
     }
   );
+});
+
+app.get("/fighting", (req, res) => {
+  const { fighter1, fighter2 } = req.body;
+  const result = fightTurns.fightTurns(fighter1, fighter2);
+  res.send({ error: null, success: true, result: result });
 });
 
 // User Login
@@ -373,6 +410,7 @@ app.post("/login", (req, res) => {
         }
         //Check the comparison result
         if (result) {
+          req.session.userID = rows[0].ID;
           res.send({ err: null, success: true });
         } else {
           res.send({
