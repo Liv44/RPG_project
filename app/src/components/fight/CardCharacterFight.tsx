@@ -5,24 +5,28 @@ import { CharacterType } from "../../types/utils";
 interface CardCharacterFightProps {
   character: CharacterType;
   isOpponent: boolean;
+  currentHealth: number;
 }
 
 export const CardCharacterFight: FC<CardCharacterFightProps> = ({
   character,
   isOpponent,
+  currentHealth,
 }) => {
   return (
     <VStack>
-      <Heading>{isOpponent ? "Vous" : "Adversaire"}</Heading>
+      <Heading>{isOpponent ? "Adversaire" : "Vous"}</Heading>
       <VStack
         bg={isOpponent ? "pink" : "yellow"}
-        width="100%"
+        width="200px"
         borderRadius={30}
         p="4"
         justifyContent="center"
       >
         <Heading size="md">{character.name}</Heading>
-        <Text fontWeight="semibold">PV : {character.health}/100</Text>
+        <Text fontWeight="semibold">
+          PV : {currentHealth}/{character.health}
+        </Text>
         <Text fontWeight="light">Attaque : {character.attack}</Text>
         <Text fontWeight="light">Défense : {character.defense}</Text>
         <Text fontWeight="light">Magie : {character.magik}</Text>

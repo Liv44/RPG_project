@@ -12,6 +12,7 @@ import { CharacterType } from "../../types/utils";
 import { CardChangeStatsCharacter } from "./CardChangeStatsCharacter";
 import { HeadingCard } from "./HeadingCard";
 import { PopupFights } from "./PopupFights";
+import axios from "axios";
 
 interface CardCharacterProps {
   character: CharacterType;
@@ -22,7 +23,17 @@ export const CardCharacter: FC<CardCharacterProps> = ({
   changesOnCharacter,
 }) => {
   const [isChangingStats, setIsChangingStats] = useState(false);
-
+  const handleClick = () => {
+    axios
+      .get("/fight/selectFighter/" + character.ID + "/" + character.userID)
+      .then((res) => {
+        if (res.data.error === null) {
+          window.location.href = "/fight";
+        } else {
+          alert("Il y a eu un problème.");
+        }
+      });
+  };
   const CardDetails = () => {
     return (
       <Box
@@ -71,7 +82,13 @@ export const CardCharacter: FC<CardCharacterProps> = ({
             </PopoverTrigger>
             <PopupFights character={character} />
           </Popover>
-          <Button backgroundColor="blue" color="white">
+          <Button
+            backgroundColor="blue"
+            color="white"
+            onClick={() => {
+              handleClick();
+            }}
+          >
             Lancer un combat
           </Button>
         </VStack>

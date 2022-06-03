@@ -1,5 +1,6 @@
 export interface CharacterType {
   ID: number;
+  userID: number;
   name: string;
   rank: number;
   skillPoints: number;

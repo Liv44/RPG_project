@@ -34,7 +34,6 @@ export const HeadingCard: FC<HeadingCardProps> = ({
     axios
       .delete("/character/delete", { data: { userID: 1, characterID: ID } })
       .then((res) => {
-        console.log(res);
         changesOnCharacter();
       });
   };
