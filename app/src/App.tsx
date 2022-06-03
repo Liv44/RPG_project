@@ -1,25 +1,32 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Box, Button, Heading, HStack, Text } from "@chakra-ui/react";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Fight } from "./pages/Fight";
+
+import { Home } from "./pages/Home";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Box backgroundColor="background" minHeight="100vh">
+      <HStack
+        padding="3"
+        color="white"
+        backgroundColor="blue"
+        justifyContent="space-between"
+      >
+        <Heading>RPG theTribe</Heading>
+        <HStack>
+          <Text>Connecté en tant que : "nom de l'utilisateur"</Text>
+          <Button backgroundColor="yellow"> Déconnexion</Button>
+        </HStack>
+      </HStack>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />}></Route>
+          <Route path="/fight" element={<Fight />}></Route>
+        </Routes>
+      </Router>
+    </Box>
   );
 }
 
