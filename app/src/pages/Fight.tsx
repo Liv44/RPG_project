@@ -103,55 +103,65 @@ export const Fight: FC = () => {
   if (fighter1 && fighter2) {
     return (
       <VStack m={5}>
-        <HStack gap={20} alignItems="start">
-          <CardCharacterFight
-            currentHealth={currentHealthFighter1}
-            character={fighter1}
-            isOpponent={false}
-          ></CardCharacterFight>
-          <VStack>
-            <Heading textAlign="center">Tour {numberTurn}</Heading>
-            <Text textAlign="center">
-              Force de l'attaque : {attackPoints}/{currentFighterAttack}
+        <VStack>
+          <HStack gap={20} alignItems="start">
+            <CardCharacterFight
+              currentHealth={currentHealthFighter1}
+              character={fighter1}
+              isOpponent={false}
+            ></CardCharacterFight>
+            <VStack>
+              <Heading textAlign="center">Tour {numberTurn}</Heading>
+              <Text textAlign="center">
+                Force de l'attaque : {attackPoints}/{currentFighterAttack}
+              </Text>
+              <Button
+                bg="blue"
+                color="white"
+                onClick={() => lauchTurn()}
+                disabled={!activeButton}
+                _hover={{
+                  bg: activeButton ? "yellow" : "blue",
+                  color: "white",
+                }}
+              >
+                Lancer le dé
+              </Button>
+            </VStack>
+            <CardCharacterFight
+              currentHealth={currentHealthFighter2}
+              character={fighter2}
+              isOpponent={true}
+            ></CardCharacterFight>
+          </HStack>
+          <Box
+            display="flex"
+            bg="blue"
+            color="white"
+            borderRadius={30}
+            width={600}
+            p={5}
+            minHeight={100}
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Text noOfLines={2} textAlign="center">
+              {message}
             </Text>
-            <Button
-              bg="blue"
-              color="white"
-              onClick={() => lauchTurn()}
-              disabled={!activeButton}
-              _hover={{
-                bg: activeButton ? "yellow" : "blue",
-                color: "white",
-              }}
-            >
-              Lancer le dé
-            </Button>
-          </VStack>
-          <CardCharacterFight
-            currentHealth={currentHealthFighter2}
-            character={fighter2}
-            isOpponent={true}
-          ></CardCharacterFight>
-        </HStack>
-        <Box
-          display="flex"
-          bg="blue"
-          color="white"
-          borderRadius={30}
-          width={600}
-          p={5}
-          minHeight={100}
-          alignItems="center"
-          justifyContent="center"
+          </Box>
+
+          <ModalEndFight
+            isOpen={isEndOfFight}
+            message={endMessage}
+          ></ModalEndFight>
+        </VStack>
+        <Button
+          onClick={() => {
+            window.location.href = "/";
+          }}
         >
-          <Text noOfLines={2} textAlign="center">
-            {message}
-          </Text>
-        </Box>
-        <ModalEndFight
-          isOpen={isEndOfFight}
-          message={endMessage}
-        ></ModalEndFight>
+          Arrêter le combat.
+        </Button>
       </VStack>
     );
   }
