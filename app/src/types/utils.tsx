@@ -17,5 +17,5 @@ export interface FightType {
   fighter1: string;
   fighter2: string;
   fighter1Won: boolean;
-  date: Date;
+  Date: Date;
 }

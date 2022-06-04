@@ -7,7 +7,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import React, { FC, useState } from "react";
+import { FC, useState } from "react";
 import { CharacterType } from "../../types/utils";
 import { CardChangeStatsCharacter } from "./CardChangeStatsCharacter";
 import { HeadingCard } from "./HeadingCard";
@@ -67,7 +67,8 @@ export const CardCharacter: FC<CardCharacterProps> = ({
         <VStack>
           <Button
             size="sm"
-            backgroundColor="pink"
+            backgroundColor="yellow"
+            _hover={{ color: "white" }}
             onClick={() => {
               setIsChangingStats(true);
             }}
@@ -76,7 +77,11 @@ export const CardCharacter: FC<CardCharacterProps> = ({
           </Button>
           <Popover>
             <PopoverTrigger>
-              <Button size="sm" backgroundColor="pink">
+              <Button
+                size="sm"
+                backgroundColor="pink"
+                _hover={{ color: "white" }}
+              >
                 Voir les derniers combats
               </Button>
             </PopoverTrigger>
@@ -85,6 +90,12 @@ export const CardCharacter: FC<CardCharacterProps> = ({
           <Button
             backgroundColor="blue"
             color="white"
+            _hover={{
+              bg: "white",
+              color: "blue",
+              borderColor: "blue",
+              border: "2px",
+            }}
             onClick={() => {
               handleClick();
             }}

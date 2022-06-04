@@ -1,4 +1,4 @@
-import { Box, Heading, HStack, Text, VStack } from "@chakra-ui/react";
+import { Heading, Text, VStack } from "@chakra-ui/react";
 import { FC } from "react";
 import { CharacterType } from "../../types/utils";
 

@@ -1,12 +1,4 @@
-import {
-  Heading,
-  Box,
-  VStack,
-  Button,
-  Text,
-  HStack,
-  Modal,
-} from "@chakra-ui/react";
+import { Heading, Box, VStack, Button, Text, HStack } from "@chakra-ui/react";
 import { FC, useEffect, useState } from "react";
 import { CardCharacterFight } from "../components/fight/CardCharacterFight";
 import { CharacterType } from "../types/utils";

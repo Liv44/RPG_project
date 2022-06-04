@@ -1,4 +1,4 @@
-import { Box, Button, Divider, Heading, Text, HStack } from "@chakra-ui/react";
+import { Box, Button, Divider, HStack, Text } from "@chakra-ui/react";
 import axios from "axios";
 import React, { FC, useState } from "react";
 import { CharacterType } from "../../types/utils";
@@ -130,7 +130,24 @@ export const CardChangeStatsCharacter: FC<CardCharacterProps> = ({
           }
         ></Stats>
       </Box>
-      <Button onClick={validateChanges}>Valider</Button>
+      <HStack justifyContent="space-between">
+        <Button
+          onClick={validateChanges}
+          bg="yellow"
+          _hover={{ color: "white" }}
+        >
+          Valider
+        </Button>
+        <Button
+          bg="pink"
+          _hover={{ bg: "pink", color: "white" }}
+          onClick={() => {
+            clicked();
+          }}
+        >
+          Annuler
+        </Button>
+      </HStack>
     </Box>
   );
 };

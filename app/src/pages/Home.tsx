@@ -1,6 +1,6 @@
-import { Grid, Box } from "@chakra-ui/react";
+import { Grid } from "@chakra-ui/react";
 import axios from "axios";
-import React, { FC, useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { CardCharacter } from "../components/home/CardCharacter";
 import { NewCharacter } from "../components/home/NewCharacter";
 // interface HomeProps {}
@@ -24,9 +24,10 @@ export const Home: FC = () => {
       m={6}
       mt={10}
     >
-      {allCharacters.map((character) => {
+      {allCharacters.map((character, index) => {
         return (
           <CardCharacter
+            key={index}
             character={character}
             changesOnCharacter={() => setChanges(changes + 1)}
           />

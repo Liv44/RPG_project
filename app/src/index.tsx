@@ -12,6 +12,7 @@ const theme = extendTheme({
     background: "#F6F6F6",
     blue: "#04002D",
     pink: "#EC004A",
+    lightPink: "#D7596F",
     yellow: "#FFB800",
   },
 });
