@@ -1,4 +1,4 @@
-# Projet RPG dans le cadre de ma candidature dans l'entreprise theTribe
+# Projet RPG dans le cadre de ma candidature pour *theTribe*
 
 # LANCER LE PROJET
 
